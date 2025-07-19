@@ -13,123 +13,162 @@ const RBCGovTracker = () => {
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterType, setFilterType] = useState('all');
 
-  // Sample data initialization
+  // Load data from localStorage on component mount
   useEffect(() => {
-    const sampleOpportunities = [
-      {
-        id: 1,
-        requirementName: 'IT Support Services',
-        solicitationNumber: 'W912DY-25-R-0001',
-        agency: 'Department of Defense',
-        issuingOfficer: 'Defense Logistics Agency',
-        requirementType: 'RFP',
-        capabilityType: 'Services',
-        qaDeadline: '2025-08-15',
-        proposalDeadline: '2025-09-01',
-        popStart: '2025-10-01',
-        popEnd: '2026-09-30',
-        status: 'Active',
-        primeSubcontractor: 'Prime',
-        estimatedValue: 2500000,
-        probability: 75,
-        qaPending: 3
-      },
-      {
-        id: 2,
-        requirementName: 'Cybersecurity Assessment',
-        solicitationNumber: 'GS-35F-0119Y',
-        agency: 'General Services Administration',
-        issuingOfficer: 'GSA IT Category',
-        requirementType: 'RFQ',
-        capabilityType: 'Services',
-        qaDeadline: '2025-07-25',
-        proposalDeadline: '2025-08-10',
-        popStart: '2025-09-01',
-        popEnd: '2026-08-31',
-        status: 'Submitted',
-        primeSubcontractor: 'Subcontractor',
-        estimatedValue: 1200000,
-        probability: 60,
-        qaPending: 0
-      },
-      {
-        id: 3,
-        requirementName: 'Data Analytics Platform',
-        solicitationNumber: 'FA8771-25-R-0025',
-        agency: 'Air Force',
-        issuingOfficer: 'Air Force Materiel Command',
-        requirementType: 'RFP',
-        capabilityType: 'Mix',
-        qaDeadline: '2025-09-05',
-        proposalDeadline: '2025-10-15',
-        popStart: '2026-01-01',
-        popEnd: '2028-12-31',
-        status: 'Active',
-        primeSubcontractor: 'Prime',
-        estimatedValue: 5000000,
-        probability: 85,
-        qaPending: 5
-      }
-    ];
+    const savedOpportunities = localStorage.getItem('rbc-opportunities');
+    const savedAwarded = localStorage.getItem('rbc-awarded');
+    const savedLost = localStorage.getItem('rbc-lost');
 
-    const sampleAwarded = [
-      {
-        id: 1,
-        requirementName: 'Network Infrastructure Upgrade',
-        solicitationNumber: 'N00178-24-R-1234',
-        agency: 'Navy',
-        awardDate: '2025-06-15',
-        popStartDate: '2025-07-01',
-        deliveryDate: '2025-07-01',
-        postAwardConference: '2025-06-20',
-        kickoffMeeting: '2025-06-25',
-        managementPlanDate: '2025-07-10',
-        awardValue: 3500000,
-        primeSubcontractor: 'Prime'
-      },
-      {
-        id: 2,
-        requirementName: 'Cloud Migration Services',
-        solicitationNumber: 'GSA-25-C-0089',
-        agency: 'General Services Administration',
-        awardDate: '2025-05-20',
-        popStartDate: '2025-06-01',
-        deliveryDate: '2025-06-01',
-        postAwardConference: '2025-05-25',
-        kickoffMeeting: '2025-05-30',
-        managementPlanDate: '2025-06-15',
-        awardValue: 2800000,
-        primeSubcontractor: 'Subcontractor'
-      }
-    ];
+    if (savedOpportunities) {
+      setOpportunities(JSON.parse(savedOpportunities));
+    } else {
+      // Initial sample data only if no saved data exists
+      const sampleOpportunities = [
+        {
+          id: 1,
+          requirementName: 'IT Support Services',
+          solicitationNumber: 'W912DY-25-R-0001',
+          agency: 'Department of Defense',
+          issuingOfficer: 'Defense Logistics Agency',
+          requirementType: 'RFP',
+          capabilityType: 'Services',
+          competitionSetAside: 'Total Small Business',
+          qaDeadline: '2025-08-15',
+          proposalDeadline: '2025-09-01',
+          popStart: '2025-10-01',
+          popEnd: '2026-09-30',
+          status: 'Active',
+          primeSubcontractor: 'Prime',
+          estimatedValue: 2500000,
+          probability: 75,
+          qaPending: 3
+        },
+        {
+          id: 2,
+          requirementName: 'Cybersecurity Assessment',
+          solicitationNumber: 'GS-35F-0119Y',
+          agency: 'General Services Administration',
+          issuingOfficer: 'GSA IT Category',
+          requirementType: 'RFQ',
+          capabilityType: 'Services',
+          competitionSetAside: 'SDVOSB',
+          qaDeadline: '2025-07-25',
+          proposalDeadline: '2025-08-10',
+          popStart: '2025-09-01',
+          popEnd: '2026-08-31',
+          status: 'Submitted',
+          primeSubcontractor: 'Subcontractor',
+          estimatedValue: 1200000,
+          probability: 60,
+          qaPending: 0
+        },
+        {
+          id: 3,
+          requirementName: 'Data Analytics Platform',
+          solicitationNumber: 'FA8771-25-R-0025',
+          agency: 'Air Force',
+          issuingOfficer: 'Air Force Materiel Command',
+          requirementType: 'RFP',
+          capabilityType: 'Mix',
+          competitionSetAside: 'Full & Open',
+          qaDeadline: '2025-09-05',
+          proposalDeadline: '2025-10-15',
+          popStart: '2026-01-01',
+          popEnd: '2028-12-31',
+          status: 'Active',
+          primeSubcontractor: 'Prime',
+          estimatedValue: 5000000,
+          probability: 85,
+          qaPending: 5
+        }
+      ];
+      setOpportunities(sampleOpportunities);
+      localStorage.setItem('rbc-opportunities', JSON.stringify(sampleOpportunities));
+    }
 
-    const sampleLost = [
-      {
-        id: 1,
-        requirementName: 'Database Modernization',
-        solicitationNumber: 'DHS-24-R-5678',
-        agency: 'Department of Homeland Security',
-        notificationDate: '2025-05-20',
-        winningContractor: 'TechCorp Solutions',
-        debriefDate: '2025-05-25',
-        estimatedValue: 1800000
-      },
-      {
-        id: 2,
-        requirementName: 'Software Development Services',
-        solicitationNumber: 'VA-24-R-9012',
-        agency: 'Department of Veterans Affairs',
-        notificationDate: '2025-04-15',
-        winningContractor: 'Global Tech Partners',
-        debriefDate: '2025-04-20',
-        estimatedValue: 2200000
-      }
-    ];
+    if (savedAwarded) {
+      setAwardedContracts(JSON.parse(savedAwarded));
+    } else {
+      const sampleAwarded = [
+        {
+          id: 1,
+          requirementName: 'Network Infrastructure Upgrade',
+          solicitationNumber: 'N00178-24-R-1234',
+          agency: 'Navy',
+          competitionSetAside: 'HUBZONE',
+          awardDate: '2025-06-15',
+          popStartDate: '2025-07-01',
+          deliveryDate: '2025-07-01',
+          postAwardConference: '2025-06-20',
+          kickoffMeeting: '2025-06-25',
+          managementPlanDate: '2025-07-10',
+          awardValue: 3500000,
+          primeSubcontractor: 'Prime'
+        },
+        {
+          id: 2,
+          requirementName: 'Cloud Migration Services',
+          solicitationNumber: 'GSA-25-C-0089',
+          agency: 'General Services Administration',
+          competitionSetAside: '8(a)',
+          awardDate: '2025-05-20',
+          popStartDate: '2025-06-01',
+          deliveryDate: '2025-06-01',
+          postAwardConference: '2025-05-25',
+          kickoffMeeting: '2025-05-30',
+          managementPlanDate: '2025-06-15',
+          awardValue: 2800000,
+          primeSubcontractor: 'Subcontractor'
+        }
+      ];
+      setAwardedContracts(sampleAwarded);
+      localStorage.setItem('rbc-awarded', JSON.stringify(sampleAwarded));
+    }
 
-    setOpportunities(sampleOpportunities);
-    setAwardedContracts(sampleAwarded);
-    setLostAwards(sampleLost);
+    if (savedLost) {
+      setLostAwards(JSON.parse(savedLost));
+    } else {
+      const sampleLost = [
+        {
+          id: 1,
+          requirementName: 'Database Modernization',
+          solicitationNumber: 'DHS-24-R-5678',
+          agency: 'Department of Homeland Security',
+          competitionSetAside: 'Veteran Owned',
+          notificationDate: '2025-05-20',
+          winningContractor: 'TechCorp Solutions',
+          debriefDate: '2025-05-25',
+          estimatedValue: 1800000
+        },
+        {
+          id: 2,
+          requirementName: 'Software Development Services',
+          solicitationNumber: 'VA-24-R-9012',
+          agency: 'Department of Veterans Affairs',
+          competitionSetAside: 'FDOT DBE',
+          notificationDate: '2025-04-15',
+          winningContractor: 'Global Tech Partners',
+          debriefDate: '2025-04-20',
+          estimatedValue: 2200000
+        }
+      ];
+      setLostAwards(sampleLost);
+      localStorage.setItem('rbc-lost', JSON.stringify(sampleLost));
+    }
   }, []);
+
+  // Save to localStorage whenever data changes
+  useEffect(() => {
+    localStorage.setItem('rbc-opportunities', JSON.stringify(opportunities));
+  }, [opportunities]);
+
+  useEffect(() => {
+    localStorage.setItem('rbc-awarded', JSON.stringify(awardedContracts));
+  }, [awardedContracts]);
+
+  useEffect(() => {
+    localStorage.setItem('rbc-lost', JSON.stringify(lostAwards));
+  }, [lostAwards]);
 
   // Calculations for overview
   const overviewStats = useMemo(() => {
@@ -188,6 +227,20 @@ const RBCGovTracker = () => {
     }
   };
 
+  // Delete awarded contract
+  const deleteAwardedContract = (id) => {
+    if (window.confirm('Are you sure you want to delete this awarded contract?')) {
+      setAwardedContracts(awardedContracts.filter(contract => contract.id !== id));
+    }
+  };
+
+  // Delete lost award
+  const deleteLostAward = (id) => {
+    if (window.confirm('Are you sure you want to delete this lost award?')) {
+      setLostAwards(lostAwards.filter(lost => lost.id !== id));
+    }
+  };
+
   // Move opportunity to awarded
   const moveToAwarded = (opp) => {
     if (window.confirm('Move this opportunity to Awarded Contracts?')) {
@@ -220,6 +273,18 @@ const RBCGovTracker = () => {
       };
       setLostAwards([...lostAwards, lost]);
       deleteOpportunity(opp.id);
+    }
+  };
+
+  // Clear all data (for testing)
+  const clearAllData = () => {
+    if (window.confirm('Are you sure you want to clear all data? This cannot be undone.')) {
+      setOpportunities([]);
+      setAwardedContracts([]);
+      setLostAwards([]);
+      localStorage.removeItem('rbc-opportunities');
+      localStorage.removeItem('rbc-awarded');
+      localStorage.removeItem('rbc-lost');
     }
   };
 
@@ -256,6 +321,19 @@ const RBCGovTracker = () => {
     return colors[type] || 'bg-gray-100 text-gray-800';
   };
 
+  const getSetAsideColor = (setAside) => {
+    const colors = {
+      'Total Small Business': 'bg-blue-100 text-blue-800',
+      'SDVOSB': 'bg-green-100 text-green-800',
+      'FDOT DBE': 'bg-purple-100 text-purple-800',
+      'HUBZONE': 'bg-orange-100 text-orange-800',
+      '8(a)': 'bg-red-100 text-red-800',
+      'Full & Open': 'bg-gray-100 text-gray-800',
+      'Veteran Owned': 'bg-indigo-100 text-indigo-800'
+    };
+    return colors[setAside] || 'bg-gray-100 text-gray-800';
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -266,13 +344,21 @@ const RBCGovTracker = () => {
               <h1 className="text-2xl font-bold text-gray-900">RBC Government Requirement Tracker</h1>
               <p className="text-sm text-gray-600">RICAR Business Consulting LLC</p>
             </div>
-            <button
-              onClick={() => setShowAddModal(true)}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2"
-            >
-              <Plus size={20} />
-              Add Opportunity
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowAddModal(true)}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2"
+              >
+                <Plus size={20} />
+                Add Opportunity
+              </button>
+              <button
+                onClick={clearAllData}
+                className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 text-sm"
+              >
+                Clear All Data
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -479,7 +565,7 @@ const RBCGovTracker = () => {
                         Agency & Officer
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Type & Capability
+                        Type & Competition
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Key Dates
@@ -513,6 +599,9 @@ const RBCGovTracker = () => {
                             {opp.requirementType}
                           </span>
                           <div className="text-sm text-gray-500 mt-1">{opp.capabilityType}</div>
+                          <span className={`px-2 py-1 text-xs rounded-full mt-1 inline-block ${getSetAsideColor(opp.competitionSetAside)}`}>
+                            {opp.competitionSetAside}
+                          </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           <div>Q&A: {formatDate(opp.qaDeadline)}</div>
@@ -586,7 +675,7 @@ const RBCGovTracker = () => {
                       Contract Details
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Agency
+                      Agency & Competition
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Award Information
@@ -600,6 +689,9 @@ const RBCGovTracker = () => {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Role
                     </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -611,8 +703,11 @@ const RBCGovTracker = () => {
                           <div className="text-sm text-gray-500">{contract.solicitationNumber}</div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {contract.agency}
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">{contract.agency}</div>
+                        <span className={`px-2 py-1 text-xs rounded-full mt-1 inline-block ${getSetAsideColor(contract.competitionSetAside)}`}>
+                          {contract.competitionSetAside}
+                        </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         <div>Award Date: {formatDate(contract.awardDate)}</div>
@@ -636,6 +731,15 @@ const RBCGovTracker = () => {
                           {contract.primeSubcontractor}
                         </span>
                       </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <button
+                          onClick={() => deleteAwardedContract(contract.id)}
+                          className="text-red-600 hover:text-red-900"
+                          title="Delete"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -658,9 +762,9 @@ const RBCGovTracker = () => {
                       Opportunity Details
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Agency
+                      Agency & Competition
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Notification Date
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -671,6 +775,9 @@ const RBCGovTracker = () => {
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Estimated Value
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
                     </th>
                   </tr>
                 </thead>
@@ -683,8 +790,11 @@ const RBCGovTracker = () => {
                           <div className="text-sm text-gray-500">{lost.solicitationNumber}</div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {lost.agency}
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">{lost.agency}</div>
+                        <span className={`px-2 py-1 text-xs rounded-full mt-1 inline-block ${getSetAsideColor(lost.competitionSetAside)}`}>
+                          {lost.competitionSetAside}
+                        </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {formatDate(lost.notificationDate)}
@@ -697,6 +807,15 @@ const RBCGovTracker = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         <div className="font-medium text-red-600">{formatCurrency(lost.estimatedValue)}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <button
+                          onClick={() => deleteLostAward(lost.id)}
+                          className="text-red-600 hover:text-red-900"
+                          title="Delete"
+                        >
+                          <Trash2 size={16} />
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -750,6 +869,7 @@ const OpportunityForm = ({ opportunity, onSubmit, onCancel }) => {
     issuingOfficer: '',
     requirementType: 'RFP',
     capabilityType: 'Services',
+    competitionSetAside: 'Total Small Business',
     qaDeadline: '',
     proposalDeadline: '',
     popStart: '',
@@ -868,6 +988,27 @@ const OpportunityForm = ({ opportunity, onSubmit, onCancel }) => {
             <option value="Services">Services</option>
             <option value="Commodities">Commodities</option>
             <option value="Mix">Mix</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Competition/Set-Aside *
+          </label>
+          <select
+            name="competitionSetAside"
+            value={formData.competitionSetAside}
+            onChange={handleChange}
+            required
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option value="Total Small Business">Total Small Business</option>
+            <option value="SDVOSB">SDVOSB</option>
+            <option value="FDOT DBE">FDOT DBE</option>
+            <option value="HUBZONE">HUBZONE</option>
+            <option value="8(a)">8(a)</option>
+            <option value="Full & Open">Full & Open</option>
+            <option value="Veteran Owned">Veteran Owned</option>
           </select>
         </div>
 
