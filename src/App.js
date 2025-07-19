@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Plus, Search, Filter, Edit, Trash2, Calendar, DollarSign, TrendingUp, AlertCircle, Building, User, FileText, Clock, Award, X } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, DollarSign, TrendingUp, AlertCircle, FileText, Award, X } from 'lucide-react';
 import './App.css';
 
 const RBCGovTracker = () => {
