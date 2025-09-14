@@ -1,1031 +1,1169 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Plus, Search, Edit, Trash2, DollarSign, TrendingUp, AlertCircle, FileText, Award, X } from 'lucide-react';
-import './App.css';
+import React, { useState, useEffect } from 'react';
+import { Search, Plus, Edit, Trash2, Award, X, Calendar, DollarSign, Users, FileText, Clock, Building } from 'lucide-react';
 
 const RBCGovTracker = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [opportunities, setOpportunities] = useState([]);
   const [awardedContracts, setAwardedContracts] = useState([]);
   const [lostAwards, setLostAwards] = useState([]);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [editingItem, setEditingItem] = useState(null);
+  const [showForm, setShowForm] = useState(false);
+  const [editingOpportunity, setEditingOpportunity] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterType, setFilterType] = useState('all');
 
-  // Sample data initialization
-  useEffect(() => {
-    const sampleOpportunities = [
-      {
-        id: 1,
-        requirementName: 'IT Support Services',
-        solicitationNumber: 'W912DY-25-R-0001',
-        agency: 'Department of Defense',
-        issuingOfficer: 'Defense Logistics Agency',
-        requirementType: 'RFP',
-        capabilityType: 'Services',
-        qaDeadline: '2025-08-15',
-        proposalDeadline: '2025-09-01',
-        popStart: '2025-10-01',
-        popEnd: '2026-09-30',
-        status: 'Active',
-        primeSubcontractor: 'Prime',
-        estimatedValue: 2500000,
-        probability: 75,
-        qaPending: 3
-      },
-      {
-        id: 2,
-        requirementName: 'Cybersecurity Assessment',
-        solicitationNumber: 'GS-35F-0119Y',
-        agency: 'General Services Administration',
-        issuingOfficer: 'GSA IT Category',
-        requirementType: 'RFQ',
-        capabilityType: 'Services',
-        qaDeadline: '2025-07-25',
-        proposalDeadline: '2025-08-10',
-        popStart: '2025-09-01',
-        popEnd: '2026-08-31',
-        status: 'Submitted',
-        primeSubcontractor: 'Subcontractor',
-        estimatedValue: 1200000,
-        probability: 60,
-        qaPending: 0
-      },
-      {
-        id: 3,
-        requirementName: 'Data Analytics Platform',
-        solicitationNumber: 'FA8771-25-R-0025',
-        agency: 'Air Force',
-        issuingOfficer: 'Air Force Materiel Command',
-        requirementType: 'RFP',
-        capabilityType: 'Mix',
-        qaDeadline: '2025-09-05',
-        proposalDeadline: '2025-10-15',
-        popStart: '2026-01-01',
-        popEnd: '2028-12-31',
-        status: 'Active',
-        primeSubcontractor: 'Prime',
-        estimatedValue: 5000000,
-        probability: 85,
-        qaPending: 5
-      }
-    ];
+  // Enhanced form data structure with all new fields
+  const [formData, setFormData] = useState({
+    requirementName: '',
+    solicitationNumber: '',
+    agency: '',
+    issuingOfficer: '',
+    requirementType: '',
+    capabilityType: '',
+    qaDueDate: '',
+    proposalDueDate: '',
+    // Updated Period of Performance structure
+    baseYear: { start: '', end: '', cost: '' },
+    optionYear1: { start: '', end: '', cost: '' },
+    optionYear2: { start: '', end: '', cost: '' },
+    optionYear3: { start: '', end: '', cost: '' },
+    optionYear4: { start: '', end: '', cost: '' },
+    // Updated Prime/Subcontractor structure
+    primeName: '',
+    subcontractorName: '',
+    estimatedValue: 0, // Auto-calculated
+    setAside: '',
+    probability: 50,
+    status: 'Active',
+    // Updated Q&A Milestone structure
+    qaSubmittalDeadline: '',
+    anticipatedGovResponse: '',
+    // Contract Vehicle Type
+    contractVehicleType: '',
+    notes: ''
+  });
 
-    const sampleAwarded = [
-      {
-        id: 1,
-        requirementName: 'Network Infrastructure Upgrade',
-        solicitationNumber: 'N00178-24-R-1234',
-        agency: 'Navy',
-        awardDate: '2025-06-15',
-        popStartDate: '2025-07-01',
-        deliveryDate: '2025-07-01',
-        postAwardConference: '2025-06-20',
-        kickoffMeeting: '2025-06-25',
-        managementPlanDate: '2025-07-10',
-        awardValue: 3500000,
-        primeSubcontractor: 'Prime'
-      },
-      {
-        id: 2,
-        requirementName: 'Cloud Migration Services',
-        solicitationNumber: 'GSA-25-C-0089',
-        agency: 'General Services Administration',
-        awardDate: '2025-05-20',
-        popStartDate: '2025-06-01',
-        deliveryDate: '2025-06-01',
-        postAwardConference: '2025-05-25',
-        kickoffMeeting: '2025-05-30',
-        managementPlanDate: '2025-06-15',
-        awardValue: 2800000,
-        primeSubcontractor: 'Subcontractor'
-      }
-    ];
+  // Enhanced awarded contract form data
+  const [awardedFormData, setAwardedFormData] = useState({
+    awardDate: '',
+    contractValue: {
+      baseYear: '',
+      option1: '',
+      option2: '',
+      option3: '',
+      option4: '',
+      total: 0
+    },
+    popStartDate: '',
+    currentExecutionYear: { start: '', end: '' },
+    postAwardConference: '',
+    kickoffMeeting: '',
+    managementPlanDate: '',
+    contractVehicleType: '',
+    deliverables: ''
+  });
 
-    const sampleLost = [
-      {
-        id: 1,
-        requirementName: 'Database Modernization',
-        solicitationNumber: 'DHS-24-R-5678',
-        agency: 'Department of Homeland Security',
-        notificationDate: '2025-05-20',
-        winningContractor: 'TechCorp Solutions',
-        debriefDate: '2025-05-25',
-        estimatedValue: 1800000
-      },
-      {
-        id: 2,
-        requirementName: 'Software Development Services',
-        solicitationNumber: 'VA-24-R-9012',
-        agency: 'Department of Veterans Affairs',
-        notificationDate: '2025-04-15',
-        winningContractor: 'Global Tech Partners',
-        debriefDate: '2025-04-20',
-        estimatedValue: 2200000
-      }
-    ];
+  // Enhanced lost award form data
+  const [lostFormData, setLostFormData] = useState({
+    notificationDate: '',
+    unsuccessfulOfferReceiptDate: '',
+    winningContractor: '',
+    debriefDate: '',
+    value: ''
+  });
 
-    setOpportunities(sampleOpportunities);
-    setAwardedContracts(sampleAwarded);
-    setLostAwards(sampleLost);
-  }, []);
-
-  // Calculations for overview
-  const overviewStats = useMemo(() => {
-    const totalOpportunities = opportunities.length;
-    const totalValue = opportunities.reduce((sum, opp) => sum + (opp.estimatedValue || 0), 0);
-    const avgProbability = opportunities.length > 0 
-      ? Math.round(opportunities.reduce((sum, opp) => sum + (opp.probability || 0), 0) / opportunities.length)
-      : 0;
-    const totalQAPending = opportunities.reduce((sum, opp) => sum + (opp.qaPending || 0), 0);
+  // Auto-calculate estimated value from all years
+  const calculateEstimatedValue = (data) => {
+    const baseYearCost = parseFloat(data.baseYear.cost) || 0;
+    const option1Cost = parseFloat(data.optionYear1.cost) || 0;
+    const option2Cost = parseFloat(data.optionYear2.cost) || 0;
+    const option3Cost = parseFloat(data.optionYear3.cost) || 0;
+    const option4Cost = parseFloat(data.optionYear4.cost) || 0;
     
-    return {
-      totalOpportunities,
-      totalValue,
-      avgProbability,
-      totalQAPending,
-      totalAwarded: awardedContracts.length,
-      totalLost: lostAwards.length,
-      awardedValue: awardedContracts.reduce((sum, award) => sum + (award.awardValue || 0), 0)
-    };
-  }, [opportunities, awardedContracts, lostAwards]);
-
-  // Filter opportunities based on search and filters
-  const filteredOpportunities = useMemo(() => {
-    return opportunities.filter(opp => {
-      const matchesSearch = searchTerm === '' || 
-        opp.requirementName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        opp.solicitationNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        opp.agency.toLowerCase().includes(searchTerm.toLowerCase());
-      
-      const matchesStatus = filterStatus === 'all' || opp.status.toLowerCase() === filterStatus.toLowerCase();
-      const matchesType = filterType === 'all' || opp.requirementType.toLowerCase() === filterType.toLowerCase();
-      
-      return matchesSearch && matchesStatus && matchesType;
-    });
-  }, [opportunities, searchTerm, filterStatus, filterType]);
-
-  // Add new opportunity
-  const addOpportunity = (newOpp) => {
-    const id = Math.max(...opportunities.map(o => o.id), 0) + 1;
-    setOpportunities([...opportunities, { ...newOpp, id }]);
-    setShowAddModal(false);
+    return baseYearCost + option1Cost + option2Cost + option3Cost + option4Cost;
   };
 
-  // Edit opportunity
-  const editOpportunity = (updatedOpp) => {
-    setOpportunities(opportunities.map(opp => 
-      opp.id === updatedOpp.id ? updatedOpp : opp
-    ));
-    setEditingItem(null);
-  };
-
-  // Delete opportunity
-  const deleteOpportunity = (id) => {
-    if (window.confirm('Are you sure you want to delete this opportunity?')) {
-      setOpportunities(opportunities.filter(opp => opp.id !== id));
-    }
-  };
-
-  // Move opportunity to awarded
-  const moveToAwarded = (opp) => {
-    if (window.confirm('Move this opportunity to Awarded Contracts?')) {
-      const awarded = {
-        ...opp,
-        id: Math.max(...awardedContracts.map(a => a.id), 0) + 1,
-        awardDate: new Date().toISOString().split('T')[0],
-        popStartDate: opp.popStart,
-        deliveryDate: opp.popStart,
-        postAwardConference: '',
-        kickoffMeeting: '',
-        managementPlanDate: '',
-        awardValue: opp.estimatedValue
-      };
-      setAwardedContracts([...awardedContracts, awarded]);
-      deleteOpportunity(opp.id);
-    }
-  };
-
-  // Move opportunity to lost
-  const moveToLost = (opp) => {
-    if (window.confirm('Move this opportunity to Lost Awards?')) {
-      const lost = {
-        ...opp,
-        id: Math.max(...lostAwards.map(l => l.id), 0) + 1,
-        notificationDate: new Date().toISOString().split('T')[0],
-        winningContractor: '',
-        debriefDate: '',
-        estimatedValue: opp.estimatedValue
-      };
-      setLostAwards([...lostAwards, lost]);
-      deleteOpportunity(opp.id);
-    }
+  // Auto-calculate awarded contract total value
+  const calculateAwardedTotal = (contractValue) => {
+    const baseYear = parseFloat(contractValue.baseYear) || 0;
+    const option1 = parseFloat(contractValue.option1) || 0;
+    const option2 = parseFloat(contractValue.option2) || 0;
+    const option3 = parseFloat(contractValue.option3) || 0;
+    const option4 = parseFloat(contractValue.option4) || 0;
+    
+    return baseYear + option1 + option2 + option3 + option4;
   };
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
     }).format(amount);
   };
 
-  const formatDate = (dateString) => {
-    if (!dateString) return '';
-    return new Date(dateString).toLocaleDateString('en-US');
-  };
-
-  const getStatusColor = (status) => {
-    switch (status?.toLowerCase()) {
-      case 'active': return 'bg-green-100 text-green-800';
-      case 'submitted': return 'bg-blue-100 text-blue-800';
-      default: return 'bg-gray-100 text-gray-800';
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    
+    if (name.includes('.')) {
+      const [section, field] = name.split('.');
+      setFormData(prev => ({
+        ...prev,
+        [section]: {
+          ...prev[section],
+          [field]: value
+        }
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
     }
   };
 
-  const getTypeColor = (type) => {
-    const colors = {
-      'RFP': 'bg-purple-100 text-purple-800',
-      'RFQ': 'bg-orange-100 text-orange-800',
-      'RFI': 'bg-yellow-100 text-yellow-800',
-      'ITB': 'bg-red-100 text-red-800',
-      'Sources Sought': 'bg-indigo-100 text-indigo-800'
-    };
-    return colors[type] || 'bg-gray-100 text-gray-800';
-  };
-
-  return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">RBC Government Requirement Tracker</h1>
-              <p className="text-sm text-gray-600">RICAR Business Consulting LLC</p>
-            </div>
-            <button
-              onClick={() => setShowAddModal(true)}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2"
-            >
-              <Plus size={20} />
-              Add Opportunity
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <div className="border-b border-gray-200">
-          <nav className="-mb-px flex space-x-8">
-            {[
-              { key: 'overview', label: 'Overview', icon: TrendingUp },
-              { key: 'opportunities', label: 'Government Opportunity Tracker', icon: FileText },
-              { key: 'awarded', label: 'Awarded Contract', icon: Award },
-              { key: 'lost', label: 'Lost Award', icon: X }
-            ].map(({ key, label, icon: Icon }) => (
-              <button
-                key={key}
-                onClick={() => setActiveTab(key)}
-                className={`flex items-center gap-2 py-2 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === key
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                <Icon size={18} />
-                {label}
-              </button>
-            ))}
-          </nav>
-        </div>
-      </div>
-
-      {/* Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* Overview Tab */}
-        {activeTab === 'overview' && (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <div className="bg-white p-6 rounded-lg shadow">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600">Total Opportunities</p>
-                    <p className="text-2xl font-bold text-gray-900">{overviewStats.totalOpportunities}</p>
-                  </div>
-                  <FileText className="h-8 w-8 text-blue-600" />
-                </div>
-              </div>
-              
-              <div className="bg-white p-6 rounded-lg shadow">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600">Total Pipeline Value</p>
-                    <p className="text-2xl font-bold text-gray-900">{formatCurrency(overviewStats.totalValue)}</p>
-                  </div>
-                  <DollarSign className="h-8 w-8 text-green-600" />
-                </div>
-              </div>
-              
-              <div className="bg-white p-6 rounded-lg shadow">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600">Avg Probability</p>
-                    <p className="text-2xl font-bold text-gray-900">{overviewStats.avgProbability}%</p>
-                  </div>
-                  <TrendingUp className="h-8 w-8 text-purple-600" />
-                </div>
-              </div>
-              
-              <div className="bg-white p-6 rounded-lg shadow">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600">Q&A Pending</p>
-                    <p className="text-2xl font-bold text-gray-900">{overviewStats.totalQAPending}</p>
-                  </div>
-                  <AlertCircle className="h-8 w-8 text-orange-600" />
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="bg-white p-6 rounded-lg shadow">
-                <h3 className="text-lg font-semibold mb-4">Contract Summary</h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Awarded Contracts:</span>
-                    <span className="font-medium">{overviewStats.totalAwarded}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Lost Awards:</span>
-                    <span className="font-medium">{overviewStats.totalLost}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Awarded Value:</span>
-                    <span className="font-medium">{formatCurrency(overviewStats.awardedValue)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Win Rate:</span>
-                    <span className="font-medium">
-                      {overviewStats.totalAwarded + overviewStats.totalLost > 0 
-                        ? Math.round((overviewStats.totalAwarded / (overviewStats.totalAwarded + overviewStats.totalLost)) * 100)
-                        : 0}%
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white p-6 rounded-lg shadow">
-                <h3 className="text-lg font-semibold mb-4">Recent Activity</h3>
-                <div className="space-y-3">
-                  {opportunities.slice(0, 3).map(opp => (
-                    <div key={opp.id} className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium text-sm">{opp.requirementName}</p>
-                        <p className="text-xs text-gray-500">{opp.agency}</p>
-                      </div>
-                      <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(opp.status)}`}>
-                        {opp.status}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Government Opportunity Tracker Tab */}
-        {activeTab === 'opportunities' && (
-          <div className="space-y-6">
-            {/* Overview Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="bg-white p-4 rounded-lg shadow">
-                <div className="text-center">
-                  <p className="text-lg font-bold text-blue-600">{overviewStats.totalOpportunities}</p>
-                  <p className="text-sm text-gray-600">Total Opportunities</p>
-                </div>
-              </div>
-              <div className="bg-white p-4 rounded-lg shadow">
-                <div className="text-center">
-                  <p className="text-lg font-bold text-green-600">{formatCurrency(overviewStats.totalValue)}</p>
-                  <p className="text-sm text-gray-600">Total Values</p>
-                </div>
-              </div>
-              <div className="bg-white p-4 rounded-lg shadow">
-                <div className="text-center">
-                  <p className="text-lg font-bold text-purple-600">{overviewStats.avgProbability}%</p>
-                  <p className="text-sm text-gray-600">Average Probability</p>
-                </div>
-              </div>
-              <div className="bg-white p-4 rounded-lg shadow">
-                <div className="text-center">
-                  <p className="text-lg font-bold text-orange-600">{overviewStats.totalQAPending}</p>
-                  <p className="text-sm text-gray-600">Q&A Pending</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Search and Filter Bar */}
-            <div className="bg-white p-4 rounded-lg shadow">
-              <div className="flex flex-col sm:flex-row gap-4">
-                <div className="flex-1 relative">
-                  <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Search opportunities..."
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                </div>
-                <select
-                  className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  value={filterStatus}
-                  onChange={(e) => setFilterStatus(e.target.value)}
-                >
-                  <option value="all">All Status</option>
-                  <option value="active">Active</option>
-                  <option value="submitted">Submitted</option>
-                </select>
-                <select
-                  className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  value={filterType}
-                  onChange={(e) => setFilterType(e.target.value)}
-                >
-                  <option value="all">All Types</option>
-                  <option value="rfp">RFP</option>
-                  <option value="rfq">RFQ</option>
-                  <option value="rfi">RFI</option>
-                  <option value="itb">ITB</option>
-                  <option value="sources sought">Sources Sought</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Opportunities Table */}
-            <div className="bg-white rounded-lg shadow overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Opportunity Details
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Agency & Officer
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Type & Capability
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Key Dates
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Value & Probability
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Status & Role
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {filteredOpportunities.map((opp) => (
-                      <tr key={opp.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div>
-                            <div className="text-sm font-medium text-gray-900">{opp.requirementName}</div>
-                            <div className="text-sm text-gray-500">{opp.solicitationNumber}</div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">{opp.agency}</div>
-                          <div className="text-sm text-gray-500">{opp.issuingOfficer}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-2 py-1 text-xs rounded-full ${getTypeColor(opp.requirementType)}`}>
-                            {opp.requirementType}
-                          </span>
-                          <div className="text-sm text-gray-500 mt-1">{opp.capabilityType}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          <div>Q&A: {formatDate(opp.qaDeadline)}</div>
-                          <div>Proposal: {formatDate(opp.proposalDeadline)}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          <div>{formatCurrency(opp.estimatedValue)}</div>
-                          <div className="text-purple-600">{opp.probability}%</div>
-                          {opp.qaPending > 0 && (
-                            <div className="text-orange-600 text-xs">Q&A: {opp.qaPending}</div>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(opp.status)}`}>
-                            {opp.status}
-                          </span>
-                          <div className="text-sm text-gray-500 mt-1">{opp.primeSubcontractor}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => setEditingItem(opp)}
-                              className="text-blue-600 hover:text-blue-900"
-                              title="Edit"
-                            >
-                              <Edit size={16} />
-                            </button>
-                            <button
-                              onClick={() => moveToAwarded(opp)}
-                              className="text-green-600 hover:text-green-900"
-                              title="Move to Awarded"
-                            >
-                              <Award size={16} />
-                            </button>
-                            <button
-                              onClick={() => moveToLost(opp)}
-                              className="text-red-600 hover:text-red-900"
-                              title="Move to Lost"
-                            >
-                              <X size={16} />
-                            </button>
-                            <button
-                              onClick={() => deleteOpportunity(opp.id)}
-                              className="text-red-600 hover:text-red-900"
-                              title="Delete"
-                            >
-                              <Trash2 size={16} />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Awarded Contract Tab */}
-        {activeTab === 'awarded' && (
-          <div className="bg-white rounded-lg shadow overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900">Awarded Contracts</h3>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Contract Details
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Agency
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Award Information
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Key Milestone Dates
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Contract Value
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Role
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {awardedContracts.map((contract) => (
-                    <tr key={contract.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">{contract.requirementName}</div>
-                          <div className="text-sm text-gray-500">{contract.solicitationNumber}</div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {contract.agency}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        <div>Award Date: {formatDate(contract.awardDate)}</div>
-                        <div>POP Start: {formatDate(contract.popStartDate)}</div>
-                        <div>Delivery: {formatDate(contract.deliveryDate)}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        <div className="text-xs space-y-1">
-                          <div>Post-Award Conference: {formatDate(contract.postAwardConference)}</div>
-                          <div>Kickoff Meeting: {formatDate(contract.kickoffMeeting)}</div>
-                          <div>Management Plan: {formatDate(contract.managementPlanDate)}</div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        <div className="font-medium text-green-600">{formatCurrency(contract.awardValue)}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        <span className={`px-2 py-1 text-xs rounded-full ${
-                          contract.primeSubcontractor === 'Prime' ? 'bg-blue-100 text-blue-800' : 'bg-orange-100 text-orange-800'
-                        }`}>
-                          {contract.primeSubcontractor}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {/* Lost Award Tab */}
-        {activeTab === 'lost' && (
-          <div className="bg-white rounded-lg shadow overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900">Lost Awards</h3>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Opportunity Details
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Agency
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Notification Date
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Winning Contractor
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Debrief Date
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Estimated Value
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {lostAwards.map((lost) => (
-                    <tr key={lost.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">{lost.requirementName}</div>
-                          <div className="text-sm text-gray-500">{lost.solicitationNumber}</div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {lost.agency}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {formatDate(lost.notificationDate)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {lost.winningContractor || 'N/A'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {formatDate(lost.debriefDate) || 'N/A'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        <div className="font-medium text-red-600">{formatCurrency(lost.estimatedValue)}</div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Add/Edit Modal */}
-      {(showAddModal || editingItem) && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold">
-                {editingItem ? 'Edit Opportunity' : 'Add New Opportunity'}
-              </h2>
-              <button
-                onClick={() => {
-                  setShowAddModal(false);
-                  setEditingItem(null);
-                }}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <X size={24} />
-              </button>
-            </div>
-
-            <OpportunityForm
-              opportunity={editingItem}
-              onSubmit={editingItem ? editOpportunity : addOpportunity}
-              onCancel={() => {
-                setShowAddModal(false);
-                setEditingItem(null);
-              }}
-            />
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
-// Opportunity Form Component
-const OpportunityForm = ({ opportunity, onSubmit, onCancel }) => {
-  const [formData, setFormData] = useState({
-    requirementName: '',
-    solicitationNumber: '',
-    agency: '',
-    issuingOfficer: '',
-    requirementType: 'RFP',
-    capabilityType: 'Services',
-    qaDeadline: '',
-    proposalDeadline: '',
-    popStart: '',
-    popEnd: '',
-    status: 'Active',
-    primeSubcontractor: 'Prime',
-    estimatedValue: '',
-    probability: 50,
-    qaPending: 0,
-    ...opportunity
-  });
+  // Update estimated value whenever cost fields change
+  useEffect(() => {
+    const total = calculateEstimatedValue(formData);
+    setFormData(prev => ({
+      ...prev,
+      estimatedValue: total
+    }));
+  }, [formData.baseYear.cost, formData.optionYear1.cost, formData.optionYear2.cost, formData.optionYear3.cost, formData.optionYear4.cost]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSubmit({
-      ...formData,
-      estimatedValue: parseFloat(formData.estimatedValue) || 0,
-      probability: parseInt(formData.probability) || 0,
-      qaPending: parseInt(formData.qaPending) || 0
+    
+    if (editingOpportunity) {
+      setOpportunities(prev => prev.map(opp => 
+        opp.id === editingOpportunity.id 
+          ? { ...formData, id: editingOpportunity.id }
+          : opp
+      ));
+      setEditingOpportunity(null);
+    } else {
+      const newOpportunity = {
+        ...formData,
+        id: Date.now(),
+        dateAdded: new Date().toISOString().split('T')[0]
+      };
+      setOpportunities(prev => [...prev, newOpportunity]);
+    }
+    
+    resetForm();
+    setShowForm(false);
+  };
+
+  const resetForm = () => {
+    setFormData({
+      requirementName: '',
+      solicitationNumber: '',
+      agency: '',
+      issuingOfficer: '',
+      requirementType: '',
+      capabilityType: '',
+      qaDueDate: '',
+      proposalDueDate: '',
+      baseYear: { start: '', end: '', cost: '' },
+      optionYear1: { start: '', end: '', cost: '' },
+      optionYear2: { start: '', end: '', cost: '' },
+      optionYear3: { start: '', end: '', cost: '' },
+      optionYear4: { start: '', end: '', cost: '' },
+      primeName: '',
+      subcontractorName: '',
+      estimatedValue: 0,
+      setAside: '',
+      probability: 50,
+      status: 'Active',
+      qaSubmittalDeadline: '',
+      anticipatedGovResponse: '',
+      contractVehicleType: '',
+      notes: ''
     });
   };
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+  const editOpportunity = (opportunity) => {
+    setFormData(opportunity);
+    setEditingOpportunity(opportunity);
+    setShowForm(true);
   };
 
-  return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Requirement Name *
-          </label>
-          <input
-            type="text"
-            name="requirementName"
-            value={formData.requirementName}
-            onChange={handleChange}
-            required
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          />
+  const deleteOpportunity = (id) => {
+    setOpportunities(prev => prev.filter(opp => opp.id !== id));
+  };
+
+  const moveToAwarded = (opportunity) => {
+    setAwardedContracts(prev => [...prev, { 
+      ...opportunity, 
+      awardedId: Date.now(),
+      ...awardedFormData 
+    }]);
+    setOpportunities(prev => prev.filter(opp => opp.id !== opportunity.id));
+  };
+
+  const moveToLost = (opportunity) => {
+    setLostAwards(prev => [...prev, { 
+      ...opportunity, 
+      lostId: Date.now(),
+      ...lostFormData 
+    }]);
+    setOpportunities(prev => prev.filter(opp => opp.id !== opportunity.id));
+  };
+
+  const filteredOpportunities = opportunities.filter(opp => {
+    const matchesSearch = opp.requirementName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         opp.solicitationNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         opp.agency.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = filterStatus === 'all' || opp.status === filterStatus;
+    const matchesType = filterType === 'all' || opp.requirementType === filterType;
+    
+    return matchesSearch && matchesStatus && matchesType;
+  });
+
+  // Overview calculations
+  const totalOpportunities = opportunities.length;
+  const totalPipelineValue = opportunities.reduce((sum, opp) => sum + (opp.estimatedValue || 0), 0);
+  const averageProbability = opportunities.length > 0 
+    ? opportunities.reduce((sum, opp) => sum + (opp.probability || 0), 0) / opportunities.length 
+    : 0;
+  const qaPendingCount = opportunities.filter(opp => 
+    opp.qaSubmittalDeadline && new Date(opp.qaSubmittalDeadline) > new Date()
+  ).length;
+  const totalAwardedValue = awardedContracts.reduce((sum, contract) => sum + (contract.estimatedValue || 0), 0);
+  const totalLostValue = lostAwards.reduce((sum, award) => sum + (award.estimatedValue || 0), 0);
+
+  const renderOverview = () => (
+    <div className="space-y-6">
+      <h2 className="text-2xl font-bold text-gray-800 mb-6">Dashboard Overview</h2>
+      
+      {/* Key Metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+          <div className="flex items-center">
+            <FileText className="h-8 w-8 text-blue-600" />
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Active Opportunities</p>
+              <p className="text-2xl font-bold text-gray-900">{totalOpportunities}</p>
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-green-50 border border-green-200 rounded-lg p-6">
+          <div className="flex items-center">
+            <DollarSign className="h-8 w-8 text-green-600" />
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Pipeline Value</p>
+              <p className="text-2xl font-bold text-gray-900">{formatCurrency(totalPipelineValue)}</p>
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-purple-50 border border-purple-200 rounded-lg p-6">
+          <div className="flex items-center">
+            <Users className="h-8 w-8 text-purple-600" />
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Avg. Probability</p>
+              <p className="text-2xl font-bold text-gray-900">{averageProbability.toFixed(1)}%</p>
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-orange-50 border border-orange-200 rounded-lg p-6">
+          <div className="flex items-center">
+            <Clock className="h-8 w-8 text-orange-600" />
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Q&A Milestones</p>
+              <p className="text-2xl font-bold text-gray-900">{qaPendingCount}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Contract Summary */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-white border border-gray-200 rounded-lg p-6">
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">Awarded Contracts</h3>
+          <p className="text-3xl font-bold text-green-600">{awardedContracts.length}</p>
+          <p className="text-sm text-gray-600 mt-2">Total Value: {formatCurrency(totalAwardedValue)}</p>
+        </div>
+        
+        <div className="bg-white border border-gray-200 rounded-lg p-6">
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">Lost Awards</h3>
+          <p className="text-3xl font-bold text-red-600">{lostAwards.length}</p>
+          <p className="text-sm text-gray-600 mt-2">Total Value: {formatCurrency(totalLostValue)}</p>
+        </div>
+        
+        <div className="bg-white border border-gray-200 rounded-lg p-6">
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">Win Rate</h3>
+          <p className="text-3xl font-bold text-blue-600">
+            {awardedContracts.length + lostAwards.length > 0 
+              ? ((awardedContracts.length / (awardedContracts.length + lostAwards.length)) * 100).toFixed(1)
+              : 0}%
+          </p>
+          <p className="text-sm text-gray-600 mt-2">Based on completed opportunities</p>
+        </div>
+      </div>
+
+      {/* Recent Activity */}
+      <div className="bg-white border border-gray-200 rounded-lg p-6">
+        <h3 className="text-lg font-semibold text-gray-800 mb-4">Recent Opportunities</h3>
+        <div className="space-y-3">
+          {opportunities.slice(0, 5).map(opp => (
+            <div key={opp.id} className="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0">
+              <div>
+                <p className="font-medium text-gray-900">{opp.requirementName}</p>
+                <p className="text-sm text-gray-600">{opp.agency} • {formatCurrency(opp.estimatedValue)}</p>
+              </div>
+              <span className={`px-2 py-1 text-xs rounded-full ${
+                opp.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+              }`}>
+                {opp.status}
+              </span>
+            </div>
+          ))}
+          {opportunities.length === 0 && (
+            <p className="text-gray-500 text-center py-4">No opportunities added yet</p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderPeriodOfPerformanceForm = () => (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+      <div className="space-y-4">
+        <h4 className="font-medium text-gray-900">Period of Performance</h4>
+        
+        {/* Base Year */}
+        <div className="border border-gray-200 rounded-lg p-4">
+          <h5 className="font-medium text-gray-800 mb-3">Base Year</h5>
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+              <input
+                type="date"
+                name="baseYear.start"
+                value={formData.baseYear.start}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+              <input
+                type="date"
+                name="baseYear.end"
+                value={formData.baseYear.end}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Estimated Cost</label>
+              <input
+                type="number"
+                step="0.01"
+                name="baseYear.cost"
+                value={formData.baseYear.cost}
+                onChange={handleInputChange}
+                placeholder="0.00"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Solicitation Number *
-          </label>
-          <input
-            type="text"
-            name="solicitationNumber"
-            value={formData.solicitationNumber}
-            onChange={handleChange}
-            required
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          />
+        {/* Option Years */}
+        {[1, 2, 3, 4].map(yearNum => (
+          <div key={yearNum} className="border border-gray-200 rounded-lg p-4">
+            <h5 className="font-medium text-gray-800 mb-3">Option Year {yearNum}</h5>
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+                <input
+                  type="date"
+                  name={`optionYear${yearNum}.start`}
+                  value={formData[`optionYear${yearNum}`].start}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+                <input
+                  type="date"
+                  name={`optionYear${yearNum}.end`}
+                  value={formData[`optionYear${yearNum}`].end}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Estimated Cost</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  name={`optionYear${yearNum}.cost`}
+                  value={formData[`optionYear${yearNum}`].cost}
+                  onChange={handleInputChange}
+                  placeholder="0.00"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Estimated Value Display */}
+      <div className="space-y-4">
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+          <h4 className="font-medium text-gray-900 mb-4">Total Estimated Value</h4>
+          <p className="text-3xl font-bold text-blue-600">{formatCurrency(formData.estimatedValue)}</p>
+          <p className="text-sm text-gray-600 mt-2">Automatically calculated from all years</p>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Federal/State Agency *
-          </label>
-          <input
-            type="text"
-            name="agency"
-            value={formData.agency}
-            onChange={handleChange}
-            required
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          />
+        <div className="bg-white border border-gray-200 rounded-lg p-4">
+          <h5 className="font-medium text-gray-800 mb-3">Value Breakdown</h5>
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span>Base Year:</span>
+              <span>{formatCurrency(parseFloat(formData.baseYear.cost) || 0)}</span>
+            </div>
+            {[1, 2, 3, 4].map(yearNum => (
+              <div key={yearNum} className="flex justify-between">
+                <span>Option Year {yearNum}:</span>
+                <span>{formatCurrency(parseFloat(formData[`optionYear${yearNum}`].cost) || 0)}</span>
+              </div>
+            ))}
+            <div className="border-t border-gray-200 pt-2 font-medium flex justify-between">
+              <span>Total:</span>
+              <span>{formatCurrency(formData.estimatedValue)}</span>
+            </div>
+          </div>
         </div>
+      </div>
+    </div>
+  );
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Issuing Officer (Contracting Office/Department)
-          </label>
-          <input
-            type="text"
-            name="issuingOfficer"
-            value={formData.issuingOfficer}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Requirement Type *
-          </label>
-          <select
-            name="requirementType"
-            value={formData.requirementType}
-            onChange={handleChange}
-            required
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+  const renderOpportunityForm = () => (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-lg p-6 w-full max-w-6xl max-h-[90vh] overflow-y-auto">
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-xl font-semibold">
+            {editingOpportunity ? 'Edit Opportunity' : 'Add New Opportunity'}
+          </h3>
+          <button
+            onClick={() => {
+              setShowForm(false);
+              setEditingOpportunity(null);
+              resetForm();
+            }}
+            className="text-gray-400 hover:text-gray-600"
           >
+            <X className="h-6 w-6" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Basic Information */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Requirement Name *</label>
+              <input
+                type="text"
+                name="requirementName"
+                value={formData.requirementName}
+                onChange={handleInputChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Solicitation Number</label>
+              <input
+                type="text"
+                name="solicitationNumber"
+                value={formData.solicitationNumber}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Federal or State Agency *</label>
+              <input
+                type="text"
+                name="agency"
+                value={formData.agency}
+                onChange={handleInputChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Issuing Officer/Department</label>
+              <input
+                type="text"
+                name="issuingOfficer"
+                value={formData.issuingOfficer}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+
+          {/* Requirement Details */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Requirement Type</label>
+              <select
+                name="requirementType"
+                value={formData.requirementType}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Select Type</option>
+                <option value="Sources Sought">Sources Sought</option>
+                <option value="RFI">RFI</option>
+                <option value="RFP">RFP</option>
+                <option value="RFQ">RFQ</option>
+                <option value="ITB">ITB</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Capability Type</label>
+              <select
+                name="capabilityType"
+                value={formData.capabilityType}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Select Capability</option>
+                <option value="Services">Services</option>
+                <option value="Commodities">Commodities</option>
+                <option value="Construction">Construction</option>
+                <option value="Research & Development(R&D)">Research & Development (R&D)</option>
+                <option value="Mix">Mix</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Set Aside</label>
+              <select
+                name="setAside"
+                value={formData.setAside}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Select Set Aside</option>
+                <option value="SBE">SBE (Small Business Enterprise)</option>
+                <option value="MBE">MBE (Minority Business Enterprise)</option>
+                <option value="Women Owned Business">Women Owned Business</option>
+                <option value="SDVOSB">SDVOSB</option>
+                <option value="HUBZone">HUBZone</option>
+                <option value="8(a)">8(a)</option>
+                <option value="WOSB">WOSB</option>
+                <option value="None">None</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Contract Vehicle Type */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Contract Vehicle Type</label>
+              <select
+                name="contractVehicleType"
+                value={formData.contractVehicleType}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Select Vehicle Type</option>
+                <option value="Purchase Order">Purchase Order</option>
+                <option value="Follow On PO">Follow On PO</option>
+                <option value="Mass Multiple Award Contract (IDIQ)">Mass Multiple Award Contract (IDIQ)</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+              <select
+                name="status"
+                value={formData.status}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="Active">Active</option>
+                <option value="Submitted">Submitted</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Prime/Subcontractor Information */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Prime Contractor Name</label>
+              <input
+                type="text"
+                name="primeName"
+                value={formData.primeName}
+                onChange={handleInputChange}
+                placeholder="Enter prime contractor name"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Subcontractor Name</label>
+              <input
+                type="text"
+                name="subcontractorName"
+                value={formData.subcontractorName}
+                onChange={handleInputChange}
+                placeholder="Enter subcontractor name                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+
+          {/* Q&A Milestone */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Q&A Submittal Deadline to Government</label>
+              <input
+                type="date"
+                name="qaSubmittalDeadline"
+                value={formData.qaSubmittalDeadline}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Anticipated Government Response</label>
+              <input
+                type="date"
+                name="anticipatedGovResponse"
+                value={formData.anticipatedGovResponse}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Proposal Due Date</label>
+              <input
+                type="date"
+                name="proposalDueDate"
+                value={formData.proposalDueDate}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+
+          {/* Probability */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Probability (%)</label>
+              <input
+                type="range"
+                name="probability"
+                min="0"
+                max="100"
+                value={formData.probability}
+                onChange={handleInputChange}
+                className="w-full"
+              />
+              <div className="text-center text-sm text-gray-600 mt-1">{formData.probability}%</div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+              <textarea
+                name="notes"
+                value={formData.notes}
+                onChange={handleInputChange}
+                rows="3"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Additional notes or comments"
+              />
+            </div>
+          </div>
+
+          {/* Period of Performance */}
+          {renderPeriodOfPerformanceForm()}
+
+          {/* Action Buttons */}
+          <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
+            <button
+              type="button"
+              onClick={() => {
+                setShowForm(false);
+                setEditingOpportunity(null);
+                resetForm();
+              }}
+              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            >
+              {editingOpportunity ? 'Update Opportunity' : 'Add Opportunity'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+
+  const renderOpportunitiesTab = () => (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold text-gray-800">Government Opportunities</h2>
+        <button
+          onClick={() => setShowForm(true)}
+          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center"
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Add Opportunity
+        </button>
+      </div>
+
+      {/* Search and Filters */}
+      <div className="bg-white p-6 rounded-lg border border-gray-200">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <input
+              type="text"
+              placeholder="Search opportunities..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <select
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="all">All Status</option>
+            <option value="Active">Active</option>
+            <option value="Submitted">Submitted</option>
+          </select>
+          <select
+            value={filterType}
+            onChange={(e) => setFilterType(e.target.value)}
+            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="all">All Types</option>
             <option value="Sources Sought">Sources Sought</option>
             <option value="RFI">RFI</option>
             <option value="RFP">RFP</option>
             <option value="RFQ">RFQ</option>
             <option value="ITB">ITB</option>
           </select>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Capability Type *
-          </label>
-          <select
-            name="capabilityType"
-            value={formData.capabilityType}
-            onChange={handleChange}
-            required
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          >
-            <option value="Services">Services</option>
-            <option value="Commodities">Commodities</option>
-            <option value="Mix">Mix</option>
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Q&A Due Date
-          </label>
-          <input
-            type="date"
-            name="qaDeadline"
-            value={formData.qaDeadline}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Proposal Due Date *
-          </label>
-          <input
-            type="date"
-            name="proposalDeadline"
-            value={formData.proposalDeadline}
-            onChange={handleChange}
-            required
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Period of Performance Start Date
-          </label>
-          <input
-            type="date"
-            name="popStart"
-            value={formData.popStart}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Period of Performance End Date
-          </label>
-          <input
-            type="date"
-            name="popEnd"
-            value={formData.popEnd}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Status *
-          </label>
-          <select
-            name="status"
-            value={formData.status}
-            onChange={handleChange}
-            required
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          >
-            <option value="Active">Active</option>
-            <option value="Submitted">Submitted</option>
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Prime/Subcontractor *
-          </label>
-          <select
-            name="primeSubcontractor"
-            value={formData.primeSubcontractor}
-            onChange={handleChange}
-            required
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          >
-            <option value="Prime">Prime</option>
-            <option value="Subcontractor">Subcontractor</option>
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Estimated Value ($)
-          </label>
-          <input
-            type="number"
-            name="estimatedValue"
-            value={formData.estimatedValue}
-            onChange={handleChange}
-            min="0"
-            step="1000"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Probability (%)
-          </label>
-          <input
-            type="number"
-            name="probability"
-            value={formData.probability}
-            onChange={handleChange}
-            min="0"
-            max="100"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Q&A Pending Count
-          </label>
-          <input
-            type="number"
-            name="qaPending"
-            value={formData.qaPending}
-            onChange={handleChange}
-            min="0"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          />
+          <div className="text-sm text-gray-600 flex items-center">
+            <FileText className="h-4 w-4 mr-1" />
+            {filteredOpportunities.length} opportunities
+          </div>
         </div>
       </div>
 
-      <div className="flex justify-end gap-4 pt-6 border-t">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300"
-        >
-          Cancel
-        </button>
-        <button
-          type="submit"
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-        >
-          {opportunity ? 'Update Opportunity' : 'Add Opportunity'}
-        </button>
+      {/* Opportunities Table */}
+      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Opportunity Details
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Agency & Type
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Value & Probability
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Key Dates
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {filteredOpportunities.map((opportunity) => (
+                <tr key={opportunity.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div>
+                      <div className="text-sm font-medium text-gray-900">
+                        {opportunity.requirementName}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        {opportunity.solicitationNumber}
+                      </div>
+                      {opportunity.contractVehicleType && (
+                        <div className="text-xs text-blue-600 mt-1">
+                          {opportunity.contractVehicleType}
+                        </div>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-900">{opportunity.agency}</div>
+                    <div className="text-sm text-gray-500">{opportunity.requirementType}</div>
+                    <div className="text-xs text-gray-500">{opportunity.capabilityType}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-medium text-gray-900">
+                      {formatCurrency(opportunity.estimatedValue)}
+                    </div>
+                    <div className="text-sm text-gray-500">{opportunity.probability}% probability</div>
+                    {opportunity.setAside && (
+                      <div className="text-xs text-green-600">{opportunity.setAside}</div>
+                    )}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <div>Q&A: {opportunity.qaSubmittalDeadline || 'TBD'}</div>
+                    <div>Proposal: {opportunity.proposalDueDate || 'TBD'}</div>
+                    {opportunity.anticipatedGovResponse && (
+                      <div className="text-xs text-gray-500">
+                        Gov Response: {opportunity.anticipatedGovResponse}
+                      </div>
+                    )}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                      opportunity.status === 'Active' 
+                        ? 'bg-green-100 text-green-800' 
+                        : 'bg-gray-100 text-gray-800'
+                    }`}>
+                      {opportunity.status}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => editOpportunity(opportunity)}
+                        className="text-blue-600 hover:text-blue-900"
+                        title="Edit"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => moveToAwarded(opportunity)}
+                        className="text-green-600 hover:text-green-900"
+                        title="Mark as Awarded"
+                      >
+                        <Award className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => moveToLost(opportunity)}
+                        className="text-red-600 hover:text-red-900"
+                        title="Mark as Lost"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => deleteOpportunity(opportunity.id)}
+                        className="text-gray-600 hover:text-gray-900"
+                        title="Delete"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        {filteredOpportunities.length === 0 && (
+          <div className="text-center py-12">
+            <FileText className="mx-auto h-12 w-12 text-gray-400" />
+            <h3 className="mt-2 text-sm font-medium text-gray-900">No opportunities found</h3>
+            <p className="mt-1 text-sm text-gray-500">
+              Get started by adding a new opportunity.
+            </p>
+          </div>
+        )}
       </div>
-    </form>
+    </div>
+  );
+
+  const renderAwardedTab = () => (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold text-gray-800">Awarded Contracts</h2>
+        <div className="flex items-center space-x-4">
+          <span className="text-sm text-gray-600">
+            Total Awarded Value: {formatCurrency(totalAwardedValue)}
+          </span>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Contract Details
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Contract Value
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Key Dates
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Post-Award Activities
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Current Execution
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {awardedContracts.map((contract) => (
+                <tr key={contract.awardedId} className="hover:bg-gray-50">
+                  <td className="px-6 py-4">
+                    <div>
+                      <div className="text-sm font-medium text-gray-900">
+                        {contract.requirementName}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        {contract.solicitationNumber}
+                      </div>
+                      <div className="text-sm text-gray-500">{contract.agency}</div>
+                      {contract.contractVehicleType && (
+                        <div className="text-xs text-blue-600 mt-1">
+                          {contract.contractVehicleType}
+                        </div>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="text-sm">
+                      <div className="font-medium text-gray-900">
+                        Total: {formatCurrency(contract.estimatedValue)}
+                      </div>
+                      <div className="text-xs text-gray-600 mt-1">
+                        <div>Base: {formatCurrency(parseFloat(contract.baseYear?.cost) || 0)}</div>
+                        {[1, 2, 3, 4].map(yearNum => {
+                          const cost = parseFloat(contract[`optionYear${yearNum}`]?.cost) || 0;
+                          return cost > 0 && (
+                            <div key={yearNum}>Opt {yearNum}: {formatCurrency(cost)}</div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-900">
+                    <div>Award: {contract.awardDate || 'TBD'}</div>
+                    <div>POP Start: {contract.popStartDate || 'TBD'}</div>
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-900">
+                    <div>Conference: {contract.postAwardConference || 'TBD'}</div>
+                    <div>Kickoff: {contract.kickoffMeeting || 'TBD'}</div>
+                    <div>Mgmt Plan: {contract.managementPlanDate || 'TBD'}</div>
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-900">
+                    <div>Start: {contract.currentExecutionYear?.start || 'TBD'}</div>
+                    <div>End: {contract.currentExecutionYear?.end || 'TBD'}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <button
+                      className="text-blue-600 hover:text-blue-900"
+                      title="Edit Contract Details"
+                    >
+                      <Edit className="h-4 w-4" />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        {awardedContracts.length === 0 && (
+          <div className="text-center py-12">
+            <Award className="mx-auto h-12 w-12 text-gray-400" />
+            <h3 className="mt-2 text-sm font-medium text-gray-900">No awarded contracts</h3>
+            <p className="mt-1 text-sm text-gray-500">
+              Awarded contracts will appear here when opportunities are marked as won.
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  const renderLostTab = () => (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold text-gray-800">Lost Awards</h2>
+        <div className="flex items-center space-x-4">
+          <span className="text-sm text-gray-600">
+            Total Lost Value: {formatCurrency(totalLostValue)}
+          </span>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Opportunity Details
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Estimated Value
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Notification Dates
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Winner & Debrief
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {lostAwards.map((award) => (
+                <tr key={award.lostId} className="hover:bg-gray-50">
+                  <td className="px-6 py-4">
+                    <div>
+                      <div className="text-sm font-medium text-gray-900">
+                        {award.requirementName}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        {award.solicitationNumber}
+                      </div>
+                      <div className="text-sm text-gray-500">{award.agency}</div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-medium text-gray-900">
+                      {formatCurrency(award.estimatedValue)}
+                    </div>
+                    <div className="text-sm text-gray-500">{award.probability}% probability</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <div>Notification: {award.notificationDate || 'TBD'}</div>
+                    <div>Receipt: {award.unsuccessfulOfferReceiptDate || 'TBD'}</div>
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-900">
+                    <div>Winner: {award.winningContractor || 'TBD'}</div>
+                    <div>Debrief: {award.debriefDate || 'N/A'}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <button
+                      className="text-blue-600 hover:text-blue-900"
+                      title="Edit Lost Award Details"
+                    >
+                      <Edit className="h-4 w-4" />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        {lostAwards.length === 0 && (
+          <div className="text-center py-12">
+            <X className="mx-auto h-12 w-12 text-gray-400" />
+            <h3 className="mt-2 text-sm font-medium text-gray-900">No lost awards</h3>
+            <p className="mt-1 text-sm text-gray-500">
+              Lost opportunities will appear here when opportunities are marked as lost.
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="min-h-screen bg-gray-100">
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-6">
+            <div className="flex items-center">
+              <Building className="h-8 w-8 text-blue-600 mr-3" />
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">
+                  RBC Government Requirement Tracker
+                </h1>
+                <p className="text-sm text-gray-600">
+                  RICAR Business Consulting LLC - Enhanced Tracking Dashboard
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Navigation Tabs */}
+      <div className="bg-white border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <nav className="flex space-x-8">
+            {[
+              { id: 'overview', name: 'Overview', icon: DollarSign },
+              { id: 'opportunities', name: 'Government Opportunities', icon: FileText },
+              { id: 'awarded', name: 'Awarded Contracts', icon: Award },
+              { id: 'lost', name: 'Lost Awards', icon: X }
+            ].map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center ${
+                    activeTab === tab.id
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  <Icon className="h-4 w-4 mr-2" />
+                  {tab.name}
+                </button>
+              );
+            })}
+          </nav>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {activeTab === 'overview' && renderOverview()}
+        {activeTab === 'opportunities' && renderOpportunitiesTab()}
+        {activeTab === 'awarded' && renderAwardedTab()}
+        {activeTab === 'lost' && renderLostTab()}
+      </div>
+
+      {/* Form Modal */}
+      {showForm && renderOpportunityForm()}
+    </div>
   );
 };
 
 function App() {
-  return (
-    <div className="App">
-      <RBCGovTracker />
-    </div>
-  );
+  return <RBCGovTracker />;
+}
+
+export default App;
+EOFwc -l src/App.js
+tail -5 src/App.js
+function App() {
+  return <RBCGovTracker />;
 }
 
 export default App;
