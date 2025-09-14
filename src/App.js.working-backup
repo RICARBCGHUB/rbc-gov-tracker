@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Plus, Edit, Trash2, Award, X, Calendar, DollarSign, Users, FileText, Clock, Building } from 'lucide-react';
-import './App.css';
 
 const RBCGovTracker = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -12,12 +11,6 @@ const RBCGovTracker = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterType, setFilterType] = useState('all');
-
-  // NEW: Additional state for editing awarded contracts and lost awards
-  const [editingAwardedContract, setEditingAwardedContract] = useState(null);
-  const [editingLostAward, setEditingLostAward] = useState(null);
-  const [showAwardedEditForm, setShowAwardedEditForm] = useState(false);
-  const [showLostEditForm, setShowLostEditForm] = useState(false);
 
   // Enhanced form data structure with all new fields
   const [formData, setFormData] = useState({
@@ -79,35 +72,6 @@ const RBCGovTracker = () => {
     value: ''
   });
 
-  // NEW: Enhanced awarded contract editing form data
-  const [editAwardedFormData, setEditAwardedFormData] = useState({
-    awardDate: '',
-    popStartDate: '',
-    currentExecutionYear: { start: '', end: '' },
-    postAwardConference: '',
-    kickoffMeeting: '',
-    managementPlanDate: '',
-    contractVehicleType: '',
-    deliverables: '',
-    contractValue: {
-      baseYear: '',
-      optionYear1: '',
-      optionYear2: '',
-      optionYear3: '',
-      optionYear4: '',
-      total: 0
-    }
-  });
-
-  // NEW: Enhanced lost award editing form data  
-  const [editLostFormData, setEditLostFormData] = useState({
-    notificationDate: '',
-    unsuccessfulOfferReceiptDate: '',
-    winningContractor: '',
-    debriefDate: '',
-    value: ''
-  });
-
   // Auto-calculate estimated value from all years
   const calculateEstimatedValue = (data) => {
     const baseYearCost = parseFloat(data.baseYear.cost) || 0;
@@ -117,6 +81,17 @@ const RBCGovTracker = () => {
     const option4Cost = parseFloat(data.optionYear4.cost) || 0;
     
     return baseYearCost + option1Cost + option2Cost + option3Cost + option4Cost;
+  };
+
+  // Auto-calculate awarded contract total value
+  const calculateAwardedTotal = (contractValue) => {
+    const baseYear = parseFloat(contractValue.baseYear) || 0;
+    const option1 = parseFloat(contractValue.option1) || 0;
+    const option2 = parseFloat(contractValue.option2) || 0;
+    const option3 = parseFloat(contractValue.option3) || 0;
+    const option4 = parseFloat(contractValue.option4) || 0;
+    
+    return baseYear + option1 + option2 + option3 + option4;
   };
 
   const formatCurrency = (amount) => {
@@ -156,117 +131,6 @@ const RBCGovTracker = () => {
       estimatedValue: total
     }));
   }, [formData.baseYear.cost, formData.optionYear1.cost, formData.optionYear2.cost, formData.optionYear3.cost, formData.optionYear4.cost]);
-
-  // NEW: Function to handle awarded contract editing
-  const editAwardedContract = (contract) => {
-    setEditAwardedFormData({
-      awardDate: contract.awardDate || '',
-      popStartDate: contract.popStartDate || '',
-      currentExecutionYear: contract.currentExecutionYear || { start: '', end: '' },
-      postAwardConference: contract.postAwardConference || '',
-      kickoffMeeting: contract.kickoffMeeting || '',
-      managementPlanDate: contract.managementPlanDate || '',
-      contractVehicleType: contract.contractVehicleType || '',
-      deliverables: contract.deliverables || '',
-      contractValue: {
-        baseYear: contract.baseYear?.cost || '',
-        optionYear1: contract.optionYear1?.cost || '',
-        optionYear2: contract.optionYear2?.cost || '',
-        optionYear3: contract.optionYear3?.cost || '',
-        optionYear4: contract.optionYear4?.cost || '',
-        total: contract.estimatedValue || 0
-      }
-    });
-    setEditingAwardedContract(contract);
-    setShowAwardedEditForm(true);
-  };
-
-  // NEW: Function to handle lost award editing
-  const editLostAward = (award) => {
-    setEditLostFormData({
-      notificationDate: award.notificationDate || '',
-      unsuccessfulOfferReceiptDate: award.unsuccessfulOfferReceiptDate || '',
-      winningContractor: award.winningContractor || '',
-      debriefDate: award.debriefDate || '',
-      value: award.estimatedValue || ''
-    });
-    setEditingLostAward(award);
-    setShowLostEditForm(true);
-  };
-
-  // NEW: Handle awarded contract form input changes
-  const handleAwardedInputChange = (e) => {
-    const { name, value } = e.target;
-    
-    if (name.includes('.')) {
-      const [section, field] = name.split('.');
-      setEditAwardedFormData(prev => ({
-        ...prev,
-        [section]: {
-          ...prev[section],
-          [field]: value
-        }
-      }));
-    } else if (name.startsWith('contractValue.')) {
-      const field = name.split('.')[1];
-      setEditAwardedFormData(prev => {
-        const newContractValue = {
-          ...prev.contractValue,
-          [field]: value
-        };
-        // Auto-calculate total
-        const total = Object.keys(newContractValue)
-          .filter(key => key !== 'total')
-          .reduce((sum, key) => sum + (parseFloat(newContractValue[key]) || 0), 0);
-        
-        return {
-          ...prev,
-          contractValue: {
-            ...newContractValue,
-            total: total
-          }
-        };
-      });
-    } else {
-      setEditAwardedFormData(prev => ({
-        ...prev,
-        [name]: value
-      }));
-    }
-  };
-
-  // NEW: Handle lost award form input changes
-  const handleLostInputChange = (e) => {
-    const { name, value } = e.target;
-    setEditLostFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  // NEW: Submit awarded contract updates
-  const submitAwardedUpdate = (e) => {
-    e.preventDefault();
-    setAwardedContracts(prev => prev.map(contract => 
-      contract.awardedId === editingAwardedContract.awardedId
-        ? { ...contract, ...editAwardedFormData }
-        : contract
-    ));
-    setShowAwardedEditForm(false);
-    setEditingAwardedContract(null);
-  };
-
-  // NEW: Submit lost award updates
-  const submitLostUpdate = (e) => {
-    e.preventDefault();
-    setLostAwards(prev => prev.map(award => 
-      award.lostId === editingLostAward.lostId
-        ? { ...award, ...editLostFormData }
-        : award
-    ));
-    setShowLostEditForm(false);
-    setEditingLostAward(null);
-  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -369,189 +233,102 @@ const RBCGovTracker = () => {
   const totalAwardedValue = awardedContracts.reduce((sum, contract) => sum + (contract.estimatedValue || 0), 0);
   const totalLostValue = lostAwards.reduce((sum, award) => sum + (award.estimatedValue || 0), 0);
 
-  // NEW: Enhanced Overview Section with comprehensive metrics
-  const renderOverview = () => {
-    // Advanced calculations for comprehensive overview
-    const totalContractValue = awardedContracts.reduce((sum, contract) => {
-      return sum + (contract.contractValue?.total || contract.estimatedValue || 0);
-    }, 0);
-    
-    const averageContractValue = awardedContracts.length > 0 ? totalContractValue / awardedContracts.length : 0;
-    
-    const upcomingDeadlines = opportunities.filter(opp => {
-      const qaDate = new Date(opp.qaSubmittalDeadline);
-      const proposalDate = new Date(opp.proposalDueDate);
-      const nextWeek = new Date();
-      nextWeek.setDate(nextWeek.getDate() + 7);
-      return (qaDate <= nextWeek && qaDate >= new Date()) || (proposalDate <= nextWeek && proposalDate >= new Date());
-    });
-
-    const activeContracts = awardedContracts.filter(contract => {
-      const endDate = new Date(contract.currentExecutionYear?.end || '');
-      return endDate >= new Date();
-    });
-
-    const contractsByVehicleType = awardedContracts.reduce((acc, contract) => {
-      const type = contract.contractVehicleType || 'Not Specified';
-      acc[type] = (acc[type] || 0) + 1;
-      return acc;
-    }, {});
-
-    return (
-      <div className="space-y-6">
-        <h2 className="text-2xl font-bold text-gray-800 mb-6">Comprehensive Dashboard Overview</h2>
+  const renderOverview = () => (
+    <div className="space-y-6">
+      <h2 className="text-2xl font-bold text-gray-800 mb-6">Dashboard Overview</h2>
+      
+      {/* Key Metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+          <div className="flex items-center">
+            <FileText className="h-8 w-8 text-blue-600" />
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Active Opportunities</p>
+              <p className="text-2xl font-bold text-gray-900">{totalOpportunities}</p>
+            </div>
+          </div>
+        </div>
         
-        {/* Enhanced Key Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-            <div className="flex items-center">
-              <FileText className="h-8 w-8 text-blue-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Active Opportunities</p>
-                <p className="text-2xl font-bold text-gray-900">{totalOpportunities}</p>
-                <p className="text-xs text-gray-500">Pipeline: {formatCurrency(totalPipelineValue)}</p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-green-50 border border-green-200 rounded-lg p-6">
-            <div className="flex items-center">
-              <Award className="h-8 w-8 text-green-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Awarded Contracts</p>
-                <p className="text-2xl font-bold text-gray-900">{awardedContracts.length}</p>
-                <p className="text-xs text-gray-500">Total: {formatCurrency(totalContractValue)}</p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-            <div className="flex items-center">
-              <X className="h-8 w-8 text-red-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Lost Awards</p>
-                <p className="text-2xl font-bold text-gray-900">{lostAwards.length}</p>
-                <p className="text-xs text-gray-500">Value: {formatCurrency(totalLostValue)}</p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-orange-50 border border-orange-200 rounded-lg p-6">
-            <div className="flex items-center">
-              <Clock className="h-8 w-8 text-orange-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Upcoming Deadlines</p>
-                <p className="text-2xl font-bold text-gray-900">{upcomingDeadlines.length}</p>
-                <p className="text-xs text-gray-500">Next 7 days</p>
-              </div>
+        <div className="bg-green-50 border border-green-200 rounded-lg p-6">
+          <div className="flex items-center">
+            <DollarSign className="h-8 w-8 text-green-600" />
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Pipeline Value</p>
+              <p className="text-2xl font-bold text-gray-900">{formatCurrency(totalPipelineValue)}</p>
             </div>
           </div>
         </div>
-
-        {/* Performance Analytics */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white border border-gray-200 rounded-lg p-6">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">Win Rate Analysis</h3>
-            <div className="space-y-3">
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Win Rate:</span>
-                <span className="font-semibold text-green-600">
-                  {awardedContracts.length + lostAwards.length > 0 
-                    ? ((awardedContracts.length / (awardedContracts.length + lostAwards.length)) * 100).toFixed(1)
-                    : 0}%
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Avg Contract Value:</span>
-                <span className="font-semibold">{formatCurrency(averageContractValue)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Active Contracts:</span>
-                <span className="font-semibold text-blue-600">{activeContracts.length}</span>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-white border border-gray-200 rounded-lg p-6">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">Contract Vehicles</h3>
-            <div className="space-y-2">
-              {Object.entries(contractsByVehicleType).map(([type, count]) => (
-                <div key={type} className="flex justify-between">
-                  <span className="text-sm text-gray-600">{type}:</span>
-                  <span className="font-semibold">{count}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-          
-          <div className="bg-white border border-gray-200 rounded-lg p-6">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">Q&A Milestones</h3>
-            <div className="space-y-3">
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Pending Responses:</span>
-                <span className="font-semibold text-orange-600">{qaPendingCount}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Avg Probability:</span>
-                <span className="font-semibold">{averageProbability.toFixed(1)}%</span>
-              </div>
+        
+        <div className="bg-purple-50 border border-purple-200 rounded-lg p-6">
+          <div className="flex items-center">
+            <Users className="h-8 w-8 text-purple-600" />
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Avg. Probability</p>
+              <p className="text-2xl font-bold text-gray-900">{averageProbability.toFixed(1)}%</p>
             </div>
           </div>
         </div>
-
-        {/* Recent Activity and Alerts */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white border border-gray-200 rounded-lg p-6">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">Upcoming Deadlines</h3>
-            <div className="space-y-3">
-              {upcomingDeadlines.slice(0, 5).map(opp => (
-                <div key={opp.id} className="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0">
-                  <div>
-                    <p className="font-medium text-gray-900 text-sm">{opp.requirementName}</p>
-                    <p className="text-xs text-gray-500">
-                      Q&A: {opp.qaSubmittalDeadline || 'TBD'} | Proposal: {opp.proposalDueDate || 'TBD'}
-                    </p>
-                  </div>
-                  <span className="px-2 py-1 text-xs rounded-full bg-orange-100 text-orange-800">
-                    Urgent
-                  </span>
-                </div>
-              ))}
-              {upcomingDeadlines.length === 0 && (
-                <p className="text-gray-500 text-center py-4 text-sm">No upcoming deadlines in the next 7 days</p>
-              )}
-            </div>
-          </div>
-
-          <div className="bg-white border border-gray-200 rounded-lg p-6">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">Recent Activity</h3>
-            <div className="space-y-3">
-              {[...opportunities, ...awardedContracts, ...lostAwards]
-                .sort((a, b) => {
-                  const dateA = new Date(a.dateAdded || a.awardDate || a.notificationDate);
-                  const dateB = new Date(b.dateAdded || b.awardDate || b.notificationDate);
-                  return dateB - dateA;
-                })
-                .slice(0, 5)
-                .map((item, index) => (
-                  <div key={index} className="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0">
-                    <div>
-                      <p className="font-medium text-gray-900 text-sm">{item.requirementName}</p>
-                      <p className="text-xs text-gray-500">{item.agency}</p>
-                    </div>
-                    <span className={`px-2 py-1 text-xs rounded-full ${
-                      item.awardedId ? 'bg-green-100 text-green-800' : item.lostId ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'
-                    }`}>
-                      {item.awardedId ? 'Awarded' : item.lostId ? 'Lost' : 'Active'}
-                    </span>
-                  </div>
-                ))}
+        
+        <div className="bg-orange-50 border border-orange-200 rounded-lg p-6">
+          <div className="flex items-center">
+            <Clock className="h-8 w-8 text-orange-600" />
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Q&A Milestones</p>
+              <p className="text-2xl font-bold text-gray-900">{qaPendingCount}</p>
             </div>
           </div>
         </div>
       </div>
-    );
-  };
+
+      {/* Contract Summary */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-white border border-gray-200 rounded-lg p-6">
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">Awarded Contracts</h3>
+          <p className="text-3xl font-bold text-green-600">{awardedContracts.length}</p>
+          <p className="text-sm text-gray-600 mt-2">Total Value: {formatCurrency(totalAwardedValue)}</p>
+        </div>
+        
+        <div className="bg-white border border-gray-200 rounded-lg p-6">
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">Lost Awards</h3>
+          <p className="text-3xl font-bold text-red-600">{lostAwards.length}</p>
+          <p className="text-sm text-gray-600 mt-2">Total Value: {formatCurrency(totalLostValue)}</p>
+        </div>
+        
+        <div className="bg-white border border-gray-200 rounded-lg p-6">
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">Win Rate</h3>
+          <p className="text-3xl font-bold text-blue-600">
+            {awardedContracts.length + lostAwards.length > 0 
+              ? ((awardedContracts.length / (awardedContracts.length + lostAwards.length)) * 100).toFixed(1)
+              : 0}%
+          </p>
+          <p className="text-sm text-gray-600 mt-2">Based on completed opportunities</p>
+        </div>
+      </div>
+
+      {/* Recent Activity */}
+      <div className="bg-white border border-gray-200 rounded-lg p-6">
+        <h3 className="text-lg font-semibold text-gray-800 mb-4">Recent Opportunities</h3>
+        <div className="space-y-3">
+          {opportunities.slice(0, 5).map(opp => (
+            <div key={opp.id} className="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0">
+              <div>
+                <p className="font-medium text-gray-900">{opp.requirementName}</p>
+                <p className="text-sm text-gray-600">{opp.agency} • {formatCurrency(opp.estimatedValue)}</p>
+              </div>
+              <span className={`px-2 py-1 text-xs rounded-full ${
+                opp.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+              }`}>
+                {opp.status}
+              </span>
+            </div>
+          ))}
+          {opportunities.length === 0 && (
+            <p className="text-gray-500 text-center py-4">No opportunities added yet</p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 
   const renderPeriodOfPerformanceForm = () => (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
@@ -841,8 +618,7 @@ const RBCGovTracker = () => {
                 name="subcontractorName"
                 value={formData.subcontractorName}
                 onChange={handleInputChange}
-                placeholder="Enter subcontractor name"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Enter subcontractor name                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
           </div>
@@ -930,330 +706,6 @@ const RBCGovTracker = () => {
               className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
             >
               {editingOpportunity ? 'Update Opportunity' : 'Add Opportunity'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-
-  // NEW: Enhanced Awarded Contract Edit Form
-  const renderAwardedEditForm = () => (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-xl font-semibold">Edit Awarded Contract</h3>
-          <button
-            onClick={() => {
-              setShowAwardedEditForm(false);
-              setEditingAwardedContract(null);
-            }}
-            className="text-gray-400 hover:text-gray-600"
-          >
-            <X className="h-6 w-6" />
-          </button>
-        </div>
-
-        <form onSubmit={submitAwardedUpdate} className="space-y-6">
-          {/* Contract Details */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Award Date</label>
-              <input
-                type="date"
-                name="awardDate"
-                value={editAwardedFormData.awardDate}
-                onChange={handleAwardedInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">POP Start Date</label>
-              <input
-                type="date"
-                name="popStartDate"
-                value={editAwardedFormData.popStartDate}
-                onChange={handleAwardedInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-          </div>
-
-          {/* Current Execution Year */}
-          <div className="border border-gray-200 rounded-lg p-4">
-            <h4 className="font-medium text-gray-900 mb-3">Current Execution Year</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
-                <input
-                  type="date"
-                  name="currentExecutionYear.start"
-                  value={editAwardedFormData.currentExecutionYear.start}
-                  onChange={handleAwardedInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Finish Date</label>
-                <input
-                  type="date"
-                  name="currentExecutionYear.end"
-                  value={editAwardedFormData.currentExecutionYear.end}
-                  onChange={handleAwardedInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Contract Value Breakdown */}
-          <div className="border border-gray-200 rounded-lg p-4">
-            <h4 className="font-medium text-gray-900 mb-3">Contract Value Breakdown</h4>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Base Year Value</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  name="contractValue.baseYear"
-                  value={editAwardedFormData.contractValue.baseYear}
-                  onChange={handleAwardedInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Option Year 1</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  name="contractValue.optionYear1"
-                  value={editAwardedFormData.contractValue.optionYear1}
-                  onChange={handleAwardedInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Option Year 2</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  name="contractValue.optionYear2"
-                  value={editAwardedFormData.contractValue.optionYear2}
-                  onChange={handleAwardedInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Option Year 3</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  name="contractValue.optionYear3"
-                  value={editAwardedFormData.contractValue.optionYear3}
-                  onChange={handleAwardedInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Option Year 4</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  name="contractValue.optionYear4"
-                  value={editAwardedFormData.contractValue.optionYear4}
-                  onChange={handleAwardedInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Total Contract Value</label>
-                <p className="text-xl font-bold text-blue-600">{formatCurrency(editAwardedFormData.contractValue.total)}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Post-Award Activities */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Post-Award Conference</label>
-              <input
-                type="date"
-                name="postAwardConference"
-                value={editAwardedFormData.postAwardConference}
-                onChange={handleAwardedInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Kickoff Meeting</label>
-              <input
-                type="date"
-                name="kickoffMeeting"
-                value={editAwardedFormData.kickoffMeeting}
-                onChange={handleAwardedInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Management Plan Date</label>
-              <input
-                type="date"
-                name="managementPlanDate"
-                value={editAwardedFormData.managementPlanDate}
-                onChange={handleAwardedInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Contract Vehicle Type</label>
-              <select
-                name="contractVehicleType"
-                value={editAwardedFormData.contractVehicleType}
-                onChange={handleAwardedInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">Select Vehicle Type</option>
-                <option value="Purchase Order">Purchase Order</option>
-                <option value="Follow On PO">Follow On PO</option>
-                <option value="Mass Multiple Award Contract (IDIQ)">Mass Multiple Award Contract (IDIQ)</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Deliverables */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Deliverables & Notes</label>
-            <textarea
-              name="deliverables"
-              value={editAwardedFormData.deliverables}
-              onChange={handleAwardedInputChange}
-              rows="4"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Enter deliverables, milestones, and other post-award activities..."
-            />
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
-            <button
-              type="button"
-              onClick={() => {
-                setShowAwardedEditForm(false);
-                setEditingAwardedContract(null);
-              }}
-              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-            >
-              Update Contract
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-
-  // NEW: Enhanced Lost Award Edit Form
-  const renderLostEditForm = () => (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-xl font-semibold">Edit Lost Award Details</h3>
-          <button
-            onClick={() => {
-              setShowLostEditForm(false);
-              setEditingLostAward(null);
-            }}
-            className="text-gray-400 hover:text-gray-600"
-          >
-            <X className="h-6 w-6" />
-          </button>
-        </div>
-
-        <form onSubmit={submitLostUpdate} className="space-y-6">
-          {/* Notification Dates */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Notification Date</label>
-              <input
-                type="date"
-                name="notificationDate"
-                value={editLostFormData.notificationDate}
-                onChange={handleLostInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Unsuccessful Offer Receipt Date</label>
-              <input
-                type="date"
-                name="unsuccessfulOfferReceiptDate"
-                value={editLostFormData.unsuccessfulOfferReceiptDate}
-                onChange={handleLostInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-          </div>
-
-          {/* Winner and Debrief */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Winning Contractor Name</label>
-              <input
-                type="text"
-                name="winningContractor"
-                value={editLostFormData.winningContractor}
-                onChange={handleLostInputChange}
-                placeholder="Enter winning contractor name"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Debrief Date (if applicable)</label>
-              <input
-                type="date"
-                name="debriefDate"
-                value={editLostFormData.debriefDate}
-                onChange={handleLostInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-          </div>
-
-          {/* Value */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Opportunity Value</label>
-            <input
-              type="number"
-              step="0.01"
-              name="value"
-              value={editLostFormData.value}
-              onChange={handleLostInputChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
-            <button
-              type="button"
-              onClick={() => {
-                setShowLostEditForm(false);
-                setEditingLostAward(null);
-              }}
-              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-            >
-              Update Lost Award
             </button>
           </div>
         </form>
@@ -1441,7 +893,6 @@ const RBCGovTracker = () => {
     </div>
   );
 
-  // NEW: Enhanced Awarded Tab with edit functionality and detailed contract value breakdown
   const renderAwardedTab = () => (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -1462,13 +913,16 @@ const RBCGovTracker = () => {
                   Contract Details
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Contract Value Breakdown
+                  Contract Value
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Current Execution
+                  Key Dates
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Post-Award Activities
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Current Execution
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Actions
@@ -1496,60 +950,39 @@ const RBCGovTracker = () => {
                   </td>
                   <td className="px-6 py-4">
                     <div className="text-sm">
-                      <div className="space-y-1">
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Base Year:</span>
-                          <span className="font-medium">{formatCurrency(parseFloat(contract.baseYear?.cost) || 0)}</span>
-                        </div>
+                      <div className="font-medium text-gray-900">
+                        Total: {formatCurrency(contract.estimatedValue)}
+                      </div>
+                      <div className="text-xs text-gray-600 mt-1">
+                        <div>Base: {formatCurrency(parseFloat(contract.baseYear?.cost) || 0)}</div>
                         {[1, 2, 3, 4].map(yearNum => {
                           const cost = parseFloat(contract[`optionYear${yearNum}`]?.cost) || 0;
                           return cost > 0 && (
-                            <div key={yearNum} className="flex justify-between">
-                              <span className="text-gray-600">Option {yearNum}:</span>
-                              <span className="font-medium">{formatCurrency(cost)}</span>
-                            </div>
+                            <div key={yearNum}>Opt {yearNum}: {formatCurrency(cost)}</div>
                           );
                         })}
-                        <div className="border-t border-gray-200 pt-1 mt-2">
-                          <div className="flex justify-between">
-                            <span className="font-semibold text-gray-900">Total:</span>
-                            <span className="font-semibold text-gray-900">{formatCurrency(contract.contractValue?.total || contract.estimatedValue)}</span>
-                          </div>
-                        </div>
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-900">
-                    <div>
-                      <div>Award: {contract.awardDate || 'TBD'}</div>
-                      <div>POP Start: {contract.popStartDate || 'TBD'}</div>
-                      <div className="mt-2 p-2 bg-blue-50 rounded">
-                        <div className="font-medium text-blue-900 text-xs">Current Execution Year:</div>
-                        <div className="text-xs">Start: {contract.currentExecutionYear?.start || 'TBD'}</div>
-                        <div className="text-xs">End: {contract.currentExecutionYear?.end || 'TBD'}</div>
-                      </div>
-                    </div>
+                    <div>Award: {contract.awardDate || 'TBD'}</div>
+                    <div>POP Start: {contract.popStartDate || 'TBD'}</div>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-900">
-                    <div className="space-y-1">
-                      <div>Conference: {contract.postAwardConference || 'TBD'}</div>
-                      <div>Kickoff: {contract.kickoffMeeting || 'TBD'}</div>
-                      <div>Mgmt Plan: {contract.managementPlanDate || 'TBD'}</div>
-                      {contract.deliverables && (
-                        <div className="text-xs text-gray-600 mt-2 p-2 bg-gray-50 rounded">
-                          Deliverables: {contract.deliverables.substring(0, 50)}...
-                        </div>
-                      )}
-                    </div>
+                    <div>Conference: {contract.postAwardConference || 'TBD'}</div>
+                    <div>Kickoff: {contract.kickoffMeeting || 'TBD'}</div>
+                    <div>Mgmt Plan: {contract.managementPlanDate || 'TBD'}</div>
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-900">
+                    <div>Start: {contract.currentExecutionYear?.start || 'TBD'}</div>
+                    <div>End: {contract.currentExecutionYear?.end || 'TBD'}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <button
-                      onClick={() => editAwardedContract(contract)}
-                      className="text-blue-600 hover:text-blue-900 flex items-center"
+                      className="text-blue-600 hover:text-blue-900"
                       title="Edit Contract Details"
                     >
-                      <Edit className="h-4 w-4 mr-1" />
-                      Edit
+                      <Edit className="h-4 w-4" />
                     </button>
                   </td>
                 </tr>
@@ -1570,7 +1003,6 @@ const RBCGovTracker = () => {
     </div>
   );
 
-  // NEW: Enhanced Lost Tab with additional fields and edit functionality
   const renderLostTab = () => (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -1624,26 +1056,20 @@ const RBCGovTracker = () => {
                     </div>
                     <div className="text-sm text-gray-500">{award.probability}% probability</div>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-900">
-                    <div className="space-y-1">
-                      <div>Notification: {award.notificationDate || 'TBD'}</div>
-                      <div>Receipt: {award.unsuccessfulOfferReceiptDate || 'TBD'}</div>
-                    </div>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <div>Notification: {award.notificationDate || 'TBD'}</div>
+                    <div>Receipt: {award.unsuccessfulOfferReceiptDate || 'TBD'}</div>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-900">
-                    <div className="space-y-1">
-                      <div>Winner: {award.winningContractor || 'TBD'}</div>
-                      <div>Debrief: {award.debriefDate || 'N/A'}</div>
-                    </div>
+                    <div>Winner: {award.winningContractor || 'TBD'}</div>
+                    <div>Debrief: {award.debriefDate || 'N/A'}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <button
-                      onClick={() => editLostAward(award)}
-                      className="text-blue-600 hover:text-blue-900 flex items-center"
+                      className="text-blue-600 hover:text-blue-900"
                       title="Edit Lost Award Details"
                     >
-                      <Edit className="h-4 w-4 mr-1" />
-                      Edit
+                      <Edit className="h-4 w-4" />
                     </button>
                   </td>
                 </tr>
@@ -1723,14 +1149,19 @@ const RBCGovTracker = () => {
         {activeTab === 'lost' && renderLostTab()}
       </div>
 
-      {/* Form Modals */}
+      {/* Form Modal */}
       {showForm && renderOpportunityForm()}
-      {showAwardedEditForm && renderAwardedEditForm()}
-      {showLostEditForm && renderLostEditForm()}
     </div>
   );
 };
 
+function App() {
+  return <RBCGovTracker />;
+}
+
+export default App;
+EOFwc -l src/App.js
+tail -5 src/App.js
 function App() {
   return <RBCGovTracker />;
 }
