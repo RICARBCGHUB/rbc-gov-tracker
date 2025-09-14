@@ -618,7 +618,8 @@ const RBCGovTracker = () => {
                 name="subcontractorName"
                 value={formData.subcontractorName}
                 onChange={handleInputChange}
-                placeholder="Enter subcontractor name                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Enter subcontractor name"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
           </div>
@@ -1155,13 +1156,6 @@ const RBCGovTracker = () => {
   );
 };
 
-function App() {
-  return <RBCGovTracker />;
-}
-
-export default App;
-EOFwc -l src/App.js
-tail -5 src/App.js
 function App() {
   return <RBCGovTracker />;
 }
